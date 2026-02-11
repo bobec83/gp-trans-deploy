@@ -18,14 +18,7 @@ if ($name === '' || $email === '' || $message === '' || !filter_var($email, FILT
     exit;
 }
 
-// ── SMTP config ──
-$smtpHost = 'poczta22602.domeny.host';
-$smtpPort = 465;
-$smtpUser = 'noreply@gp-trans.pl';
-$smtpPass = 'y0L^s5I.n7';
-
 $to = 'wpiaskowski@gmail.com';
-$from = 'noreply@gp-trans.pl';
 $subject = '=?UTF-8?B?' . base64_encode('Zapytanie ze strony www — ' . $name) . '?=';
 
 $messageHtml = nl2br(htmlspecialchars($message, ENT_QUOTES, 'UTF-8'));
@@ -78,7 +71,7 @@ $body = '<!DOCTYPE html>
             <p style="margin:0 0 12px;color:#6b7d8e;font-size:11px;text-transform:uppercase;letter-spacing:2px;font-weight:600;">Dane kontaktowe</p>
             <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e8ecf0;border-radius:10px;overflow:hidden;">
                 <tr style="background-color:#f7f9fb;">
-                    <td style="padding:12px 20px;color:#6b7d8e;font-size:13px;width:140px;">Imie i nazwisko</td>
+                    <td style="padding:12px 20px;color:#6b7d8e;font-size:13px;width:140px;">Imię i nazwisko</td>
                     <td style="padding:12px 20px;color:#0b1c2c;font-size:15px;font-weight:700;">' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . '</td>
                 </tr>
                 <tr>
@@ -94,7 +87,7 @@ $body = '<!DOCTYPE html>
     <!-- ===== MESSAGE ===== -->
     <tr>
         <td style="padding:16px 28px 32px;">
-            <p style="margin:0 0 12px;color:#6b7d8e;font-size:11px;text-transform:uppercase;letter-spacing:2px;font-weight:600;">Tresc wiadomosci</p>
+            <p style="margin:0 0 12px;color:#6b7d8e;font-size:11px;text-transform:uppercase;letter-spacing:2px;font-weight:600;">Treść wiadomości</p>
             <div style="background-color:#f7f9fb;border-left:4px solid #df1d2b;border-radius:0 10px 10px 0;padding:20px 24px;">
                 <p style="margin:0;color:#0b1c2c;font-size:15px;line-height:1.7;">' . $messageHtml . '</p>
             </div>
@@ -107,7 +100,7 @@ $body = '<!DOCTYPE html>
             <table cellpadding="0" cellspacing="0">
                 <tr>
                     <td style="background-color:#df1d2b;border-radius:8px;padding:14px 32px;">
-                        <a href="mailto:' . htmlspecialchars($email, ENT_QUOTES, 'UTF-8') . '?subject=Re: Zapytanie ze strony gp-trans.pl" style="color:#ffffff;font-size:14px;font-weight:700;text-decoration:none;letter-spacing:0.5px;">Odpowiedz na wiadomosc</a>
+                        <a href="mailto:' . htmlspecialchars($email, ENT_QUOTES, 'UTF-8') . '?subject=Re: Zapytanie ze strony gp-trans.pl" style="color:#ffffff;font-size:14px;font-weight:700;text-decoration:none;letter-spacing:0.5px;">Odpowiedz na wiadomość</a>
                     </td>
                 </tr>
             </table>
@@ -125,7 +118,7 @@ $body = '<!DOCTYPE html>
                 </tr>
                 <tr>
                     <td style="padding-top:8px;color:rgba(255,255,255,0.45);font-size:12px;line-height:1.6;">
-                        ul. Krotka 8, 69-100 Slubice<br>
+                        ul. Krótka 8, 69-100 Słubice<br>
                         tel. +48 95 755 88 08 &bull; fax +48 95 715 48 93<br>
                         spedycja@gp-trans.pl &bull; www.gp-trans.pl
                     </td>
@@ -143,7 +136,7 @@ $body = '<!DOCTYPE html>
     <tr>
         <td style="background-color:#091520;padding:12px 40px;text-align:center;">
             <p style="margin:0;color:rgba(255,255,255,0.25);font-size:10px;">
-                Wiadomosc wygenerowana automatycznie ze strony gp-trans.pl &bull; &copy; 2026 GP-Trans
+                Wiadomość wygenerowana automatycznie ze strony gp-trans.pl &bull; &copy; 2026 GP-Trans
             </p>
         </td>
     </tr>
@@ -156,79 +149,11 @@ $body = '<!DOCTYPE html>
 </body>
 </html>';
 
-// ── Build raw email message ──
-$rawEmail  = "From: $from\r\n";
-$rawEmail .= "To: $to\r\n";
-$rawEmail .= "Reply-To: " . filter_var($email, FILTER_SANITIZE_EMAIL) . "\r\n";
-$rawEmail .= "Subject: $subject\r\n";
-$rawEmail .= "MIME-Version: 1.0\r\n";
-$rawEmail .= "Content-Type: text/html; charset=UTF-8\r\n";
-$rawEmail .= "X-Mailer: GP-Trans-Website\r\n";
-$rawEmail .= "\r\n";
-$rawEmail .= $body;
+$headers  = "From: noreply@gp-trans.pl\r\n";
+$headers .= "Reply-To: $email\r\n";
+$headers .= "MIME-Version: 1.0\r\n";
+$headers .= "Content-Type: text/html; charset=UTF-8\r\n";
 
-// ── Send via SMTP with authentication ──
-function smtpSend($host, $port, $user, $pass, $from, $to, $rawEmail) {
-    $smtp = @stream_socket_client(
-        "ssl://$host:$port",
-        $errno, $errstr, 15,
-        STREAM_CLIENT_CONNECT,
-        stream_context_create(['ssl' => ['verify_peer' => false, 'verify_peer_name' => false]])
-    );
-    if (!$smtp) return "Connection failed: $errstr ($errno)";
+$sent = mail($to, $subject, $body, $headers);
 
-    $greeting = fgets($smtp, 512);
-    if (substr($greeting, 0, 3) !== '220') return "Bad greeting: $greeting";
-
-    // EHLO
-    fwrite($smtp, "EHLO gp-trans.pl\r\n");
-    $resp = '';
-    while ($line = fgets($smtp, 512)) {
-        $resp .= $line;
-        if ($line[3] === ' ') break;
-    }
-
-    // AUTH LOGIN
-    fwrite($smtp, "AUTH LOGIN\r\n");
-    $resp = fgets($smtp, 512);
-    if (substr($resp, 0, 3) !== '334') return "AUTH failed: $resp";
-
-    fwrite($smtp, base64_encode($user) . "\r\n");
-    $resp = fgets($smtp, 512);
-    if (substr($resp, 0, 3) !== '334') return "User rejected: $resp";
-
-    fwrite($smtp, base64_encode($pass) . "\r\n");
-    $resp = fgets($smtp, 512);
-    if (substr($resp, 0, 3) !== '235') return "Auth failed: $resp";
-
-    // MAIL FROM
-    fwrite($smtp, "MAIL FROM:<$from>\r\n");
-    $resp = fgets($smtp, 512);
-    if (substr($resp, 0, 3) !== '250') return "MAIL FROM rejected: $resp";
-
-    // RCPT TO
-    fwrite($smtp, "RCPT TO:<$to>\r\n");
-    $resp = fgets($smtp, 512);
-    if (substr($resp, 0, 3) !== '250') return "RCPT TO rejected: $resp";
-
-    // DATA
-    fwrite($smtp, "DATA\r\n");
-    $resp = fgets($smtp, 512);
-    if (substr($resp, 0, 3) !== '354') return "DATA rejected: $resp";
-
-    // Send message body (escape lines starting with .)
-    $rawEmail = str_replace("\r\n.", "\r\n..", $rawEmail);
-    fwrite($smtp, $rawEmail . "\r\n.\r\n");
-    $resp = fgets($smtp, 512);
-    if (substr($resp, 0, 3) !== '250') return "Message rejected: $resp";
-
-    // QUIT
-    fwrite($smtp, "QUIT\r\n");
-    fclose($smtp);
-
-    return true;
-}
-
-$result = smtpSend($smtpHost, $smtpPort, $smtpUser, $smtpPass, $from, $to, $rawEmail);
-
-echo json_encode(['ok' => $result === true, 'debug' => $result === true ? null : $result]);
+echo json_encode(['ok' => $sent]);
