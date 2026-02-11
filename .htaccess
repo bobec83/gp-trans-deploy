@@ -2,6 +2,14 @@
   RewriteEngine On
   RewriteBase /
 
+  # Force HTTPS
+  RewriteCond %{HTTPS} off
+  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+  # Redirect www to non-www (cert covers gp-trans.pl only)
+  RewriteCond %{HTTP_HOST} ^www\.gp-trans\.pl$ [NC]
+  RewriteRule ^ https://gp-trans.pl%{REQUEST_URI} [L,R=301]
+
   # Let PHP files pass through
   RewriteRule \.php$ - [L]
 
