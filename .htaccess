@@ -2,6 +2,10 @@
   RewriteEngine On
   RewriteBase /
 
+  # Force HTTPS
+  RewriteCond %{HTTPS} off
+  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
   # Let PHP files pass through
   RewriteRule \.php$ - [L]
 
