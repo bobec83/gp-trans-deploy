@@ -8,6 +8,34 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $input = json_decode(file_get_contents('php://input'), true);
 
+// ── Honeypot check — bots fill the hidden "website" field ──
+$honeypot = isset($input['website']) ? trim($input['website']) : '';
+if ($honeypot !== '') {
+    // Silently return ok to not alert the bot
+    echo json_encode(['ok' => true]);
+    exit;
+}
+
+// ── Math CAPTCHA verification ──
+$captcha_a  = isset($input['captcha_a'])      ? (int)$input['captcha_a']      : null;
+$captcha_b  = isset($input['captcha_b'])      ? (int)$input['captcha_b']      : null;
+$captcha_op = isset($input['captcha_op'])      ? $input['captcha_op']          : '';
+$captcha_ans = isset($input['captcha_answer']) ? (int)$input['captcha_answer'] : null;
+
+$captcha_valid = false;
+if ($captcha_a !== null && $captcha_b !== null && $captcha_ans !== null) {
+    if ($captcha_op === '+') {
+        $captcha_valid = ($captcha_a + $captcha_b) === $captcha_ans;
+    } elseif ($captcha_op === '-') {
+        $captcha_valid = ($captcha_a - $captcha_b) === $captcha_ans;
+    }
+}
+
+if (!$captcha_valid) {
+    echo json_encode(['ok' => false]);
+    exit;
+}
+
 $name    = isset($input['name'])    ? trim(strip_tags($input['name']))    : '';
 $email   = isset($input['email'])   ? trim(strip_tags($input['email']))   : '';
 $phone   = isset($input['phone'])   ? trim(strip_tags($input['phone']))   : '';
